@@ -1,14 +1,20 @@
 import { createServer } from 'node:http';
 import { createServerAdapter } from '@whatwg-node/server';
 import { github } from './providers/github';
+import { google } from './providers/google';
 import { createAuth } from './router';
 
 const authServer = createAuth({
   providers: {
-    github: github<{ id: string }>({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    github: github(),
+    google: google({
+      redirectURI: '',
     }),
+  },
+  session: ({ provider, profile }) => {
+    if (provider === 'github') {
+      profile;
+    }
   },
 });
 

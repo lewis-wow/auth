@@ -1,17 +1,28 @@
-import { generateState, OAuth2RequestError } from 'arctic';
+import { generateCodeVerifier, OAuth2RequestError } from 'arctic';
 import { error, IttyRouter, withCookies } from 'itty-router';
 import { serializeCookie } from 'oslo/cookie';
-import type { AnyOAuth2Provider } from './types';
+import type {
+  AnyOAuthProvider,
+  inferProfileFromOAuthProvider,
+} from './provider';
 
 export type CreateAuthArgs<
-  TProviders extends Record<string, AnyOAuth2Provider>,
+  TProviders extends Record<string, AnyOAuthProvider>,
 > = {
   providers: TProviders;
   basePath?: string;
+  session: (
+    opts: {
+      [K in keyof TProviders]: {
+        provider: K;
+        profile: inferProfileFromOAuthProvider<TProviders[K]>;
+      };
+    }[keyof TProviders],
+  ) => void;
 };
 
 export const createAuth = <
-  TProviders extends Record<string, AnyOAuth2Provider>,
+  TProviders extends Record<string, AnyOAuthProvider>,
 >({
   providers,
   basePath = '/api/auth',
@@ -30,11 +41,11 @@ export const createAuth = <
         return error(400);
       }
 
-      const state = generateState();
       const provider = providers[params.provider]!;
-      const url = await provider.arcticProvider.createAuthorizationURL(state);
+      const { url, state } = await provider.createAuthorizationURL();
+
       const headers = new Headers({
-        'Set-Cookie': serializeCookie(provider.oauthStateCookieName, state, {
+        'Set-Cookie': serializeCookie(provider.options.stateCookieName, state, {
           path: '/',
           secure: process.env.NODE_ENV === 'production',
           httpOnly: true,
@@ -66,27 +77,21 @@ export const createAuth = <
       const provider = providers[params.provider]!;
 
       const code = query.code?.toString() ?? null;
+      const codeVerifier = query.code_verifier?.toString() ?? null;
       const state = query.state?.toString() ?? null;
       const storedState: string | null = cookies.oauth_state ?? null;
 
-      if (!code || !state || !storedState || state !== storedState) {
-        console.log(code, state, storedState);
-
-        return error(400);
-      }
-
       try {
-        const tokens =
-          await provider.arcticProvider.validateAuthorizationCode(code);
-        const userResponse = await fetch(provider.apiURL, {
-          headers: {
-            Authorization: `Bearer ${tokens.accessToken}`,
-          },
+        const user = await provider.validateAuthorizationCode({
+          code,
+          codeVerifier,
+          state,
+          storedState,
         });
 
-        const githubUser = await userResponse.json();
+        console.log({ user });
 
-        console.log({ githubUser });
+        return Response.json(user);
       } catch (e) {
         return new Response(null, {
           status: e instanceof OAuth2RequestError ? 400 : 500,
