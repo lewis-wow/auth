@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "author": "lewis-wow",
   "license": "MIT",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "",
