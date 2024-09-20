@@ -1,0 +1,25 @@
+{
+  "name": "@auth/tsup",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./base": "./dist/base.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "run-s build:tsup build:tsc",
+    "build:tsup": "tsup",
+    "build:tsc": "tsc --emitDeclarationOnly"
+  },
+  "devDependencies": {
+    "@auth/tsconfig": "workspace:*",
+    "@types/node": "^22.5.2",
+    "npm-run-all": "^4.1.5",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4"
+  }
+}
