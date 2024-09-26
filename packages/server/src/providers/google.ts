@@ -1,8 +1,4 @@
-import {
-  OAuthProvider,
-  type OAuthProviderArgs,
-  type ProfileOverrideFunction,
-} from '@/provider';
+import { OAuthProvider } from '@/OAuthProvider';
 import { Google as ArcticGoogle } from 'arctic';
 
 export type GoogleProfile = {
@@ -24,38 +20,25 @@ export type GoogleProfile = {
   sub: string;
 } & Record<string, unknown>;
 
-export function google(
-  args: OAuthProviderArgs & {
-    redirectURI: string;
-    enterpriseDomain?: string;
-  },
-): OAuthProvider<'google', GoogleProfile>;
+export type GoogleOptions = {
+  clientId?: string;
+  clientSecret?: string;
+  redirectURI: string;
+};
 
-export function google<P extends object>(
-  args: OAuthProviderArgs & {
-    profile: ProfileOverrideFunction<GoogleProfile, P>;
-    redirectURI: string;
-    enterpriseDomain?: string;
-  },
-): OAuthProvider<'google', P>;
-
-export function google<P extends object>(
-  args: OAuthProviderArgs & {
-    profile?: ProfileOverrideFunction<GoogleProfile, P>;
-    redirectURI: string;
-    enterpriseDomain?: string;
-  },
-) {
-  return new OAuthProvider({
-    providerName: 'google',
-    issuer: 'https://accounts.google.com',
-    stateCookieName: 'google_oauth_state',
-    arctic: new ArcticGoogle(
-      (args?.clientId ?? process.env.GITHUB_CLIENT_ID)!,
-      (args?.clientSecret ?? process.env.GITHUB_CLIENT_SECRET)!,
-      args.redirectURI,
-    ),
-    pkce: true,
-    ...args,
-  });
+export class Google extends OAuthProvider<GoogleProfile> {
+  constructor(options: GoogleOptions) {
+    super({
+      issuer: 'https://accounts.google.com',
+      stateCookieName: 'google_oauth_state',
+      arctic: {
+        provider: new ArcticGoogle(
+          (options?.clientId ?? process.env.GITHUB_CLIENT_ID)!,
+          (options?.clientSecret ?? process.env.GITHUB_CLIENT_SECRET)!,
+          options.redirectURI,
+        ),
+        pkce: true,
+      },
+    });
+  }
 }

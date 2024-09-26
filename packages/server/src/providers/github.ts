@@ -1,8 +1,4 @@
-import {
-  OAuthProvider,
-  type OAuthProviderArgs,
-  type ProfileOverrideFunction,
-} from '@/provider';
+import { OAuthProvider } from '@/OAuthProvider';
 import { GitHub as ArcticGitHub } from 'arctic';
 
 /** @see https://docs.github.com/en/rest/users/users#get-the-authenticated-user */
@@ -55,38 +51,29 @@ export type GitHubProfile = {
   [claim: string]: unknown;
 };
 
-export function github(
-  args?: OAuthProviderArgs & {
-    redirectURI?: string;
-    enterpriseDomain?: string;
-  },
-): OAuthProvider<'github', GitHubProfile>;
+export type GitHubOptions = {
+  clientId?: string;
+  clientSecret?: string;
+  redirectURI?: string;
+  enterpriseDomain?: string;
+};
 
-export function github<P extends object>(
-  args: OAuthProviderArgs & {
-    profile: ProfileOverrideFunction<GitHubProfile, P>;
-    redirectURI?: string;
-    enterpriseDomain?: string;
-  },
-): OAuthProvider<'github', P>;
-
-export function github<P extends object>(
-  args?: OAuthProviderArgs & {
-    profile?: ProfileOverrideFunction<GitHubProfile, P>;
-    redirectURI?: string;
-    enterpriseDomain?: string;
-  },
-) {
-  return new OAuthProvider({
-    providerName: 'github',
-    issuer: 'https://api.github.com/user',
-    stateCookieName: 'github_oauth_state',
-    arctic: new ArcticGitHub(
-      (args?.clientId ?? process.env.GITHUB_CLIENT_ID)!,
-      (args?.clientSecret ?? process.env.GITHUB_CLIENT_SECRET)!,
-      args,
-    ),
-    pkce: false,
-    ...args,
-  });
+export class GitHub extends OAuthProvider<GitHubProfile> {
+  constructor(options: GitHubOptions) {
+    super({
+      issuer: 'https://api.github.com/user',
+      stateCookieName: 'github_oauth_state',
+      arctic: {
+        provider: new ArcticGitHub(
+          (options?.clientId ?? process.env.GITHUB_CLIENT_ID)!,
+          (options?.clientSecret ?? process.env.GITHUB_CLIENT_SECRET)!,
+          {
+            redirectURI: options.redirectURI,
+            enterpriseDomain: options.enterpriseDomain,
+          },
+        ),
+        pkce: false,
+      },
+    });
+  }
 }

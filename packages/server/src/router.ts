@@ -4,7 +4,7 @@ import { serializeCookie } from 'oslo/cookie';
 import type {
   AnyOAuthProvider,
   inferProfileFromOAuthProvider,
-} from './provider';
+} from './OAuthProvider';
 
 export type CreateAuthArgs<
   TProviders extends Record<string, AnyOAuthProvider>,
