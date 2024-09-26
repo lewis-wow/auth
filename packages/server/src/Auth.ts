@@ -5,10 +5,8 @@ import {
   type SessionCookieOptions as LuciaSessionCookieOptions,
   type SessionCookieAttributesOptions,
 } from 'lucia';
-import type { TimeSpanUnit } from 'oslo';
-import type { UserFn } from './createSession';
 import type { AnyOAuthProvider } from './OAuthProvider';
-import { SessionFactory, type SessionFn } from './SessionFactory';
+import { SessionFactory, type SessionFn, type UserFn } from './SessionFactory';
 
 export interface SessionCookieOptions extends SessionCookieAttributesOptions {
   name: LuciaSessionCookieOptions['name'];
@@ -19,7 +17,7 @@ export type AuthOptions = {
   adapter: Adapter;
   providers: AnyOAuthProvider[];
   redirectURL: string | URL;
-  sessionExpiresIn?: `${number}${TimeSpanUnit}` | TimeSpan;
+  sessionExpiresIn?: TimeSpan;
   cookies?: {
     session?: SessionCookieOptions;
   };
@@ -28,28 +26,8 @@ export type AuthOptions = {
 };
 
 export const auth = (options: AuthOptions) => {
-  const timeSpanRegex = /(\d+)(ms|s|m|h|d|w)/;
-  const timeSpanParsedStringOptions =
-    typeof options.sessionExpiresIn === 'string'
-      ? timeSpanRegex.exec(options.sessionExpiresIn)
-      : undefined;
-
-  if (timeSpanParsedStringOptions === null) {
-    throw new TypeError(
-      'sessionExpiresIn options was in bad format, allowed format is (\\d+)(ms|s|m|h|d|w)',
-    );
-  }
-
-  const sessionExpiresIn =
-    timeSpanParsedStringOptions === undefined
-      ? (options.sessionExpiresIn as TimeSpan | undefined)
-      : new TimeSpan(
-          parseInt(timeSpanParsedStringOptions[0]),
-          timeSpanParsedStringOptions[1] as TimeSpanUnit,
-        );
-
   const lucia = new Lucia(options.adapter, {
-    sessionExpiresIn: sessionExpiresIn,
+    sessionExpiresIn: options.sessionExpiresIn,
     sessionCookie: {
       expires: options?.cookies?.session?.expires ?? false,
       name: options?.cookies?.session?.name,
@@ -92,14 +70,25 @@ export const auth = (options: AuthOptions) => {
     });
   };
 
+  const signIn = async (request: Request): Promise<Response> => {
+    const url = new URL(request.url);
+
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    sessionFactory.create;
+
+    return new Response();
+  };
+
   return {
     lucia,
     getSession,
     signOut,
+    signIn,
   };
 };
 
-const { lucia, getSession, signOut } = auth({
+const { lucia, getSession, signOut, signIn } = auth({
   adapter: {} as any,
   providers: [],
   redirectURL: '',

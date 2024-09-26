@@ -59,9 +59,9 @@ export class SessionFactory {
       },
     });
 
-    const profile: object = await userResponse.json();
+    const profile = await userResponse.json();
 
-    const user = await this.userFn({ profile });
+    const user = await this.userFn({ profile: profile as object });
 
     const userSession = await this.sessionFn({ user });
 
